@@ -217,38 +217,18 @@ private struct TvoLaunchSplash: View {
                 )
                 .opacity(revealed ? 1 : 0)
 
-                ForEach(0..<3, id: \.self) { index in
-                    Circle()
-                        .stroke(
-                            LinearGradient(
-                                colors: [Color(hex: 0x45D6FF).opacity(0.9), Color(hex: 0x9B55FF).opacity(0.75), .clear],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            style: StrokeStyle(lineWidth: index == 0 ? 2 : 1, dash: [10, 8])
-                        )
-                        .frame(width: 245 + CGFloat(index * 42), height: 245 + CGFloat(index * 42))
-                        .rotationEffect(.degrees(revealed ? Double(80 + index * 45) : Double(-90 + index * 35)))
-                        .scaleEffect(revealed ? 1 : 0.36)
-                        .opacity(revealed ? 0.72 - Double(index) * 0.12 : 0)
-                        .blur(radius: fading ? 8 : 0)
-                }
-
-                VStack(spacing: logoSize * 0.015) {
-                    TvoMascotIcon()
-                        .frame(width: logoSize * 0.46, height: logoSize * 0.46)
-                        .clipShape(RoundedRectangle(cornerRadius: logoSize * 0.13, style: .continuous))
-                        .shadow(color: Color(hex: 0x36BDF5).opacity(revealed ? 0.48 : 0), radius: 24)
-                        .scaleEffect(revealed ? 1 : 0.55)
+                VStack(spacing: logoSize * 0.02) {
+                    TvoDotLogo()
+                        .frame(width: logoSize * 1.6, height: logoSize * 0.62)
                         .opacity(revealed ? 1 : 0)
-                        .animation(.spring(response: 0.8, dampingFraction: 0.72).delay(0.58), value: revealed)
+                        .animation(.easeInOut(duration: 0.6).delay(0.2), value: revealed)
 
-                    TvoWordmark(progress: revealed ? 1 : 0, dotOpacity: revealed ? 0 : 1)
-                        .frame(width: logoSize * 1.32, height: logoSize * 0.23)
+                    TvoBlueberry()
+                        .frame(width: logoSize * 0.5, height: logoSize * 0.5)
+                        .opacity(revealed ? 1 : 0)
+                        .animation(.spring(response: 0.8, dampingFraction: 0.72).delay(0.6), value: revealed)
                 }
-                .frame(width: logoSize * 1.5, height: logoSize * 0.82)
-                .shadow(color: Color(hex: 0x36BDF5).opacity(revealed ? 0.28 : 0), radius: 20)
-                .rotation3DEffect(.degrees(revealed ? 0 : -12), axis: (x: 0, y: 1, z: 0))
+                .frame(width: logoSize * 1.7, height: logoSize * 0.9)
                 .opacity(fading ? 0 : 1)
 
                 VStack {
@@ -268,7 +248,7 @@ private struct TvoLaunchSplash: View {
                     revealed = true
                 }
                 Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(2_250))
+                    try? await Task.sleep(for: .milliseconds(6_000))
                     guard !Task.isCancelled else { return }
                     withAnimation(.easeInOut(duration: 0.35)) { fading = true }
                     try? await Task.sleep(for: .milliseconds(380))
