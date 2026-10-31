@@ -144,23 +144,26 @@ private struct TvoBerryLeaf: View {
 /// Dots scatter across the screen, then converge to form the letters "TVO", then idle.
 struct TvoDotLogo: View {
     @State private var dots: [Dot] = []
-    @State private var start = Date()
+    @State private var startTime: Double = 0
 
     var body: some View {
-        TimelineView(.animation) { timeline in
-            let animTime = Date().timeIntervalSince(start)
-            Canvas { ctx, size in
-                if dots.isEmpty {
-                    dots = Self.makeDots(in: size)
+        GeometryReader { geometry in
+            TimelineView(.animation) { timeline in
+                let animTime = timeline.date.timeIntervalSinceReferenceDate - startTime
+                Canvas { ctx, size in
+                    for dot in dots {
+                        let pos = dot.position(at: animTime, size: size)
+                        let r = dot.r
+                        ctx.fill(
+                            Path(ellipseIn: CGRect(x: pos.x - r / 2, y: pos.y - r / 2, width: r, height: r)),
+                            with: .color(dot.color)
+                        )
+                    }
                 }
-                for dot in dots {
-                    let pos = dot.position(at: animTime, size: size)
-                    let r = dot.r
-                    ctx.fill(
-                        Path(ellipseIn: CGRect(x: pos.x - r / 2, y: pos.y - r / 2, width: r, height: r)),
-                        with: .color(dot.color)
-                    )
-                }
+            }
+            .onAppear {
+                startTime = Date().timeIntervalSinceReferenceDate
+                dots = Self.makeDots(in: geometry.size)
             }
         }
     }
