@@ -141,7 +141,7 @@ private struct TvoBerryLeaf: View {
 
 // MARK: - Dot animation forming "TVO"
 
-/// Dots scatter across the screen, then converge to form the letters "TVO", then idle.
+/// Dots scatter across the screen, then converge to form the letters "TVO", then idle with a gentle pulse.
 struct TvoDotLogo: View {
     @State private var dots: [Dot] = []
     @State private var startTime: Double = 0
@@ -154,9 +154,10 @@ struct TvoDotLogo: View {
                     for dot in dots {
                         let pos = dot.position(at: animTime, size: size)
                         let r = dot.r
+                        let alpha = dot.opacity(at: animTime)
                         ctx.fill(
                             Path(ellipseIn: CGRect(x: pos.x - r / 2, y: pos.y - r / 2, width: r, height: r)),
-                            with: .color(dot.color)
+                            with: .color(dot.color.opacity(alpha))
                         )
                     }
                 }
@@ -176,40 +177,62 @@ struct TvoDotLogo: View {
         let color: Color
         let r: CGFloat
 
+        /// Phase timings (seconds).
+        private static let scatterDuration = 1.6
+        private static let convergeDuration = 1.4
+        private static let settleDuration = 0.8
+
         func position(at t: Double, size: CGSize) -> CGPoint {
-            let scatterUntil = 2.0
-            let formUntil = 4.5
-            if t < scatterUntil {
-                // drift around home (dots all over the screen)
+            if t < Self.scatterDuration {
+                // Phase 1: drift slowly outward from home
+                let p = Self.easeOutCubic(t / Self.scatterDuration)
+                let drift = 22.0 * (1 - p)
                 return CGPoint(
-                    x: home.x + sin(t * 1.5 + Double(target.x).truncatingRemainder(dividingBy: 7)) * 18,
-                    y: home.y + cos(t * 1.1 + Double(target.y).truncatingRemainder(dividingBy: 7)) * 18
+                    x: home.x + sin(t * 1.3 + Double(target.x).truncatingRemainder(dividingBy: 7)) * drift,
+                    y: home.y + cos(t * 0.9 + Double(target.y).truncatingRemainder(dividingBy: 7)) * drift
                 )
-            } else if t < formUntil {
-                // converge to the text
-                    let p = TvoDotLogo.easeOutCubic((t - scatterUntil) / (formUntil - scatterUntil))
+            } else if t < Self.scatterDuration + Self.convergeDuration {
+                // Phase 2: converge toward the letter shape
+                let p = (t - Self.scatterDuration) / Self.convergeDuration
+                let ease = Self.easeInOutCubic(p)
                 return CGPoint(
-                    x: home.x + (target.x - home.x) * p,
-                    y: home.y + (target.y - home.y) * p
+                    x: home.x + (target.x - home.x) * ease,
+                    y: home.y + (target.y - home.y) * ease
                 )
             } else {
-                // idle wobble around the letter
+                // Phase 3: settled — gentle breathing idle around the letter
+                let idle = t - Self.scatterDuration - Self.convergeDuration
                 return CGPoint(
-                    x: target.x + sin(t * 2.0 + Double(target.x).truncatingRemainder(dividingBy: 5)) * 5,
-                    y: target.y + cos(t * 1.6 + Double(target.y).truncatingRemainder(dividingBy: 5)) * 5
+                    x: target.x + sin(idle * 1.5 + Double(target.x).truncatingRemainder(dividingBy: 5)) * 2.5,
+                    y: target.y + cos(idle * 1.1 + Double(target.y).truncatingRemainder(dividingBy: 5)) * 2.5
                 )
             }
         }
-    }
 
-    private static func easeOutCubic(_ t: Double) -> Double {
-        1 - pow(1 - t, 3)
+        /// Fade in during scatter, hold, then very gently fade toward the end for depth.
+        func opacity(at t: Double) -> Double {
+            if t < Self.scatterDuration {
+                return Self.easeOutCubic(t / Self.scatterDuration) * 0.85 + 0.15
+            } else if t < Self.scatterDuration + Self.convergeDuration {
+                return 1.0
+            } else {
+                let idle = t - Self.scatterDuration - Self.convergeDuration
+                return 0.92 + 0.08 * sin(idle * 2.0)
+            }
+        }
+
+        private static func easeOutCubic(_ t: Double) -> Double {
+            1 - pow(1 - t, 3)
+        }
+        private static func easeInOutCubic(_ t: Double) -> Double {
+            t < 0.5 ? 4 * t * t * t : 1 - pow(-2 * t + 2, 3) / 2
+        }
     }
 
     private static func makeDots(in size: CGSize) -> [Dot] {
         let targets = samplePoints("TVO", in: size)
         guard !targets.isEmpty else { return [] }
-        let count = min(max(targets.count * 2, 900), 2000)
+        let count = min(max(targets.count * 2, 700), 1800)
         let colors: [Color] = [
             Color(hex: Palette.berry1), Color(hex: Palette.berry2),
             Color(hex: Palette.berry3), Color(hex: Palette.berry4),
@@ -219,17 +242,18 @@ struct TvoDotLogo: View {
         for i in 0..<count {
             let target = targets[i % targets.count]
             let h = Double(i)
+            // Homes spread evenly across the full screen so the scatter reads as one burst.
             let home = CGPoint(
-                x: size.width * 0.1 + CGFloat(sin(h * 0.37)) * size.width * 0.8
-                    + CGFloat(cos(h * 0.21)) * 60,
-                y: size.height * 0.1 + CGFloat(cos(h * 0.29)) * size.height * 0.8
-                    + CGFloat(sin(h * 0.41)) * 60
+                x: size.width * 0.08 + CGFloat(sin(h * 0.41)) * size.width * 0.84
+                    + CGFloat(cos(h * 0.27)) * 40,
+                y: size.height * 0.08 + CGFloat(cos(h * 0.33)) * size.height * 0.84
+                    + CGFloat(sin(h * 0.19)) * 40
             )
             dots.append(Dot(
                 target: target,
                 home: home,
                 color: colors[Int(h.truncatingRemainder(dividingBy: Double(colors.count))) % colors.count],
-                r: 1.4 + CGFloat(h.truncatingRemainder(dividingBy: 4)) * 0.7
+                r: 1.2 + CGFloat(h.truncatingRemainder(dividingBy: 3)) * 0.6
             ))
         }
         return dots
