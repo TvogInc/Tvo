@@ -91,7 +91,7 @@ struct TvoBlueberry: View {
                     p.addQuadCurve(to: CGPoint(x: size * 0.63, y: size * 0.66),
                                    control: CGPoint(x: size * 0.5, y: size * 0.80))
                 }
-                .stroke(Color(hex: Palette.nose), lineWidth: size * 0.03, lineCap: .round)
+                .stroke(Color(hex: Palette.nose), style: StrokeStyle(lineWidth: size * 0.03, lineCap: CGLineCap.round, lineJoin: CGLineJoin.round))
                 .position(x: size * 0.5, y: size * 0.5)
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
@@ -123,14 +123,19 @@ struct TvoBlueberry: View {
 private struct TvoBerryLeaf: View {
     let rotation: Double
     var body: some View {
+        ZStack {
+            leafPath.fill(Color(hex: Palette.berry3))
+            leafPath.stroke(Color(hex: Palette.nose), style: StrokeStyle(lineWidth: 2.5, lineCap: CGLineCap.round, lineJoin: CGLineJoin.round))
+        }
+        .rotationEffect(.degrees(rotation))
+    }
+
+    private var leafPath: Path {
         Path { p in
             p.move(to: CGPoint(x: 0, y: 0))
             p.addQuadCurve(to: CGPoint(x: 14, y: -42), control: CGPoint(x: 6, y: -14))
             p.addQuadCurve(to: CGPoint(x: 0, y: 0), control: CGPoint(x: -6, y: -14))
         }
-        .fill(Color(hex: Palette.berry3))
-        .stroke(Color(hex: Palette.nose), lineWidth: 2.5, lineCap: .round, lineJoin: .round)
-        .rotationEffect(.degrees(rotation))
     }
 }
 
@@ -179,7 +184,7 @@ struct TvoDotLogo: View {
                 )
             } else if t < formUntil {
                 // converge to the text
-                let p = Self.easeOutCubic((t - scatterUntil) / (formUntil - scatterUntil))
+                    let p = TvoDotLogo.easeOutCubic((t - scatterUntil) / (formUntil - scatterUntil))
                 return CGPoint(
                     x: home.x + (target.x - home.x) * p,
                     y: home.y + (target.y - home.y) * p
@@ -261,10 +266,10 @@ struct TvoDotLogo: View {
         }
         let scaleX = CGFloat(width) / size.width
         let scaleY = CGFloat(height) / size.height
-        let stride = 6
+        let sampleStride = 6
         var points: [CGPoint] = []
-        for y in stride(from: 0, to: height, by: stride) {
-            for x in stride(from: 0, to: width, by: stride) {
+        for y in stride(from: 0, to: height, by: sampleStride) {
+            for x in stride(from: 0, to: width, by: sampleStride) {
                 let i = (y * width + x) * bytesPerPixel
                 if pixelData[i + 3] > 100 {
                     points.append(CGPoint(x: CGFloat(x) / scaleX, y: CGFloat(y) / scaleY))
