@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tvo Logo</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #1E1B29; color: #fff; font-family: system-ui, -apple-system, sans-serif; }
+  canvas { position: fixed; inset: 0; display: block; }
+  #logo { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(70vw, 70vh); height: min(70vw, 70vh); display: flex; align-items: center; justify-content: center; gap: 18px; pointer-events: none; z-index: 10; }
+  .berry { width: 100%; height: 100%; display: block; filter: drop-shadow(0 20px 40px rgba(43,47,143,0.5)); animation: berryFloat 6s ease-in-out infinite; }
+  @keyframes berryFloat { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-14px) scale(1.03); } }
+  #text { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 20; }
+  #text h1 { font-size: clamp(4rem, 22vw, 14rem); font-weight: 900; letter-spacing: -8px; color: #fff; text-transform: uppercase; opacity: 0; transition: opacity 0.6s ease; filter: drop-shadow(0 8px 24px rgba(0,0,0,0.6)); }
+  #text.ready h1 { opacity: 1; }
+  .hint { position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%); color: #B9B2CC; font-size: 0.9rem; opacity: 0; transition: opacity 1.2s ease; pointer-events: none; z-index: 20; }
+  .hint.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div id="logo">
+  <svg class="berry" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="berryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#A9BCFF"/>
+        <stop offset="34%" stop-color="#6C86F5"/>
+        <stop offset="68%" stop-color="#4254D6"/>
+        <stop offset="100%" stop-color="#2B2F8F"/>
+      </linearGradient>
+      <radialGradient id="shineGrad" cx="35%" cy="35%" r="60%">
+        <stop offset="0%" stop-color="#fff" stop-opacity="0.75"/>
+        <stop offset="45%" stop-color="#fff" stop-opacity="0"/>
+        <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <!-- leaf -->
+    <path d="M170 110 Q120 70 140 20 Q160 -10 210 40 Q230 70 200 110 Q195 105 170 110" fill="#6C86F5" stroke="#2B2F8F" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- berry body -->
+    <ellipse cx="200" cy="230" rx="92" ry="108" fill="url(#berryGrad)"/>
+    <circle cx="200" cy="230" r="1" fill="none"/>
+    <ellipse cx="170" cy="155" rx="62" ry="70" fill="url(#shineGrad)"/>
+    <!-- outline -->
+    <ellipse cx="200" cy="230" rx="92" ry="108" fill="none" stroke="#1C1F66" stroke-width="7" stroke-linejoin="round"/>
+    <!-- eyes -->
+    <g fill="#1C1F66">
+      <circle cx="168" cy="192" r="16"/>
+      <circle cx="232" cy="192" r="16"/>
+    </g>
+    <!-- eye highlights -->
+    <g fill="#fff">
+      <circle cx="172" cy="186" r="5"/>
+      <circle cx="166" cy="198" r="3"/>
+      <circle cx="236" cy="186" r="5"/>
+      <circle cx="228" cy="198" r="3"/>
+    </g>
+    <!-- blush -->
+    <ellipse cx="148" cy="212" rx="18" ry="12" fill="#fff" opacity="0.35" filter="blur(4px)"/>
+    <ellipse cx="252" cy="212" rx="18" ry="12" fill="#fff" opacity="0.35" filter="blur(4px)"/>
+    <!-- smile -->
+    <path d="M176 248 Q200 268 224 248" fill="none" stroke="#1C1F66" stroke-width="8" stroke-linecap="round"/>
+    <!-- little crown leaf -->
+    <path d="M190 115 Q185 100 195 95 Q205 100 200 115" fill="#4254D6" stroke="#2B2F8F" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M198 112 Q203 98 213 102 Q207 112 200 112" fill="#4254D6" stroke="#2B2F8F" stroke-width="4" stroke-linejoin="round"/>
+  </svg>
+</div>
+<div id="text"><h1 id="bigText">TVO</h1></div>
+<div class="hint" id="hint">Tap to restart</div>
+<canvas id="canvas"></canvas>
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d', { alpha: false });
+const bigText = document.getElementById('bigText');
+const textWrap = document.getElementById('text');
+const hint = document.getElementById('hint');
+let W, H, dots = [], phase = 'scatter', started = false;
+
+const COLORS = ['#A9BCFF','#6C86F5','#4254D6','#2B2F8F','#B9B2CC'];
+
+function resize(){
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+function sampleTextPoints(text){
+  const off = document.createElement('canvas');
+  const octx = off.getContext('2d');
+  const size = Math.min(W, H) * 0.5;
+  off.width = size; off.height = size * 0.55;
+  octx.fillStyle = '#fff';
+  octx.textAlign = 'center';
+  octx.textBaseline = 'middle';
+  octx.font = `bold ${size * 0.85}px system-ui, -apple-system, sans-serif`;
+  octx.fillText(text, size/2, size*0.5/2);
+  const img = octx.getImageData(0, 0, size, size*0.55);
+  const pts = [];
+  const stride = 3;
+  for(let y=0; y<img.height; y+=stride){
+    for(let x=0; x<img.width; x+=stride){
+      const i = (y*img.width + x)*4;
+      if(img.data[i+3] > 100){
+        pts.push({x: x/size * W, y: (y/(size*0.55)) * H * 0.55 + H*0.28});
+      }
+    }
+  }
+  return pts;
+}
+
+function initDots(targets){
+  dots = [];
+  const count = Math.min(Math.max(targets.length, 1200), 2200);
+  if(targets.length === 0){
+    for(let i=0;i<count;i++){
+      dots.push({x:Math.random()*W, y:Math.random()*H, tx:Math.random()*W, ty:Math.random()*H, vx:(Math.random()-0.5)*2, vy:(Math.random()-0.5)*2, r:1.4+Math.random()*1.6, c:COLORS[Math.floor(Math.random()*COLORS.length)], life:Math.random()*Math.PI*2});
+    }
+  } else {
+    for(let i=0;i<count;i++){
+      const t = targets[i % targets.length];
+      dots.push({x:Math.random()*W, y:Math.random()*H, tx:t.x, ty:t.y, vx:(Math.random()-0.5)*3, vy:(Math.random()-0.5)*3, r:1.4+Math.random()*1.6, c:COLORS[Math.floor(Math.random()*COLORS.length)], life:Math.random()*Math.PI*2});
+    }
+  }
+}
+
+function lerp(a,b,t){ return a + (b-a)*t; }
+
+function animate(){
+  ctx.fillStyle = '#1E1B29';
+  ctx.fillRect(0,0,W,H);
+  const t = Date.now() * 0.001;
+  for(const d of dots){
+    if(phase === 'scatter'){
+      d.x += d.vx; d.y += d.vy;
+      d.vx += (Math.random()-0.5)*0.15; d.vy += (Math.random()-0.5)*0.15;
+      const spd = Math.hypot(d.vx,d.vy);
+      if(spd > 3){ d.vx *= 2.5/spd; d.vy *= 2.5/spd; }
+      if(d.x < 0 || d.x > W) d.vx *= -1;
+      if(d.y < 0 || d.y > H) d.vy *= -1;
+    } else if(phase === 'form'){
+      const p = 0.022;
+      d.x = lerp(d.x, d.tx, p); d.y = lerp(d.y, d.ty, p);
+      d.x += Math.sin(t*3 + d.life)*1.2; d.y += Math.cos(t*2 + d.life)*1.2;
+    } else if(phase === 'idle'){
+      d.x = d.tx + Math.sin(t*1.5 + d.life)*6;
+      d.y = d.ty + Math.cos(t*1.2 + d.life)*6;
+    }
+    ctx.fillStyle = d.c;
+    ctx.beginPath();
+    ctx.arc(d.x, d.y, d.r, 0, Math.PI*2);
+    ctx.fill();
+  }
+  requestAnimationFrame(animate);
+}
+
+function start(){
+  if(started) return; started = true;
+  const targets = sampleTextPoints('TVO');
+  initDots(targets);
+  phase = 'scatter';
+  textWrap.classList.remove('ready');
+  hint.classList.remove('show');
+  setTimeout(()=>{ phase = 'form'; textWrap.classList.add('ready'); }, 3600);
+  setTimeout(()=>{ phase = 'idle'; hint.classList.add('show'); }, 8000);
+}
+
+window.addEventListener('mousedown', start);
+window.addEventListener('touchstart', (e)=>{ e.preventDefault(); start(); }, {passive:false});
+
+start();
+animate();
+</script>
+</body>
+</html>
