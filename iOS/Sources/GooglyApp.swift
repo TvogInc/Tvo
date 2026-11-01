@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 #if canImport(UIKit)
 import UIKit
@@ -16,6 +17,7 @@ struct RootView: View {
     @StateObject private var link = MacLink()
     @StateObject private var live = LiveVoice()
     @StateObject private var store = SessionStore()
+    @StateObject private var updateChecker = PhoneUpdateChecker()
     @AppStorage(Palette.characterColorKey) private var characterColorHex = ""
     @State private var showApp = false
     @State private var showStartupSplash = true
@@ -25,6 +27,8 @@ struct RootView: View {
     @State private var holdStart: DispatchWorkItem?
     @State private var holdingToAsk = false
     @State private var liveError: String?
+    @State private var dismissedUpdateVersion: String?
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         ZStack {
@@ -56,6 +60,18 @@ struct RootView: View {
                 PairingView { withAnimation(.easeOut(duration: 0.3)) { showPairing = false } }
                     .transition(.opacity)
             }
+
+            if let update = updateChecker.availableUpdate,
+               dismissedUpdateVersion != update.version {
+                PhoneUpdateBanner(
+                    update: update,
+                    download: { openURL(update.downloadURL) },
+                    dismiss: { dismissedUpdateVersion = update.version }
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .padding(.top, 18)
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
         }
         .overlay {
             if showStartupSplash {
@@ -72,7 +88,7 @@ struct RootView: View {
         .ignoresSafeArea()
         .phoneChrome()
         .fullScreenCover(isPresented: $showApp) {
-            BlueyAppView(store: store, live: live, link: link) { showApp = false }
+            BlueyAppView(store: store, live: live, link: link, updateChecker: updateChecker) { showApp = false }
         }
         .alert("Couldn't wake Tvo", isPresented: Binding(
             get: { liveError != nil },
@@ -88,6 +104,7 @@ struct RootView: View {
             wireLiveVoice()
             live.onError = { message in liveError = message }
             link.start()
+            Task { await updateChecker.checkIfNeeded() }
         }
         .onChange(of: link.connected) { _, connected in
             if connected {
@@ -104,7 +121,174 @@ struct RootView: View {
             link.send(Packet(command: "characterColor", text: color))
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { link.start() } else if phase == .background { link.stop() }
+            if phase == .active {
+                link.start()
+                Task { await updateChecker.checkIfNeeded() }
+            } else if phase == .background {
+                link.stop()
+            }
+        }
+    }
+
+    struct PhoneAppUpdate: Equatable {
+        let version: String
+        let downloadURL: URL
+    }
+
+    @MainActor
+    final class PhoneUpdateChecker: ObservableObject {
+        enum Status: Equatable {
+            case idle
+            case checking
+            case current
+            case available
+            case noVersionedRelease
+            case failed(String)
+        }
+
+        @Published private(set) var status: Status = .idle
+        @Published private(set) var availableUpdate: PhoneAppUpdate?
+        private var lastCheck: Date?
+
+        func checkIfNeeded() async {
+            guard lastCheck.map({ Date().timeIntervalSince($0) >= 86_400 }) ?? true else { return }
+            await check()
+        }
+
+        func check() async {
+            guard status != .checking else { return }
+            status = .checking
+            lastCheck = Date()
+
+            do {
+                var request = URLRequest(url: URL(string: "https://api.github.com/repos/TvogInc/Tvo/releases?per_page=20")!)
+                request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+                request.setValue("Tvo-iOS", forHTTPHeaderField: "User-Agent")
+                let (data, response) = try await URLSession.shared.data(for: request)
+                guard let response = response as? HTTPURLResponse, (200..<300).contains(response.statusCode) else {
+                    throw UpdateCheckError.invalidResponse
+                }
+                let releases = try JSONDecoder().decode([GitHubRelease].self, from: data)
+                guard let release = releases.first(where: {
+                    compareVersions($0.tagName, currentVersion) != nil
+                        && $0.assets.contains(where: { $0.name == "Tvo.ipa" })
+                }) else {
+                    availableUpdate = nil
+                    status = .noVersionedRelease
+                    return
+                }
+                guard let downloadURL = release.assets.first(where: { $0.name == "Tvo.ipa" })?.browserDownloadURL else {
+                    throw UpdateCheckError.missingIPA
+                }
+                guard let comparison = compareVersions(release.tagName, currentVersion) else {
+                    status = .noVersionedRelease
+                    return
+                }
+                guard comparison == .orderedDescending else {
+                    availableUpdate = nil
+                    status = .current
+                    return
+                }
+                availableUpdate = PhoneAppUpdate(version: release.tagName, downloadURL: downloadURL)
+                status = .available
+            } catch {
+                availableUpdate = nil
+                status = .failed(error.localizedDescription)
+            }
+        }
+
+        private var currentVersion: String {
+            Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"
+        }
+
+        private func compareVersions(_ lhs: String, _ rhs: String) -> ComparisonResult? {
+            func components(_ version: String) -> [Int]? {
+                let value = version.hasPrefix("v") ? String(version.dropFirst()) : version
+                let parts = value.split(separator: ".", omittingEmptySubsequences: false)
+                guard !parts.isEmpty else { return nil }
+                var result: [Int] = []
+                for part in parts {
+                    guard let component = Int(part) else { return nil }
+                    result.append(component)
+                }
+                return result
+            }
+
+            guard let lhsParts = components(lhs), let rhsParts = components(rhs) else { return nil }
+            for index in 0..<max(lhsParts.count, rhsParts.count) {
+                let lhsPart = index < lhsParts.count ? lhsParts[index] : 0
+                let rhsPart = index < rhsParts.count ? rhsParts[index] : 0
+                if lhsPart != rhsPart {
+                    return lhsPart > rhsPart ? .orderedDescending : .orderedAscending
+                }
+            }
+            return .orderedSame
+        }
+    }
+
+    private struct GitHubRelease: Decodable {
+        struct Asset: Decodable {
+            let name: String
+            let browserDownloadURL: URL
+
+            enum CodingKeys: String, CodingKey {
+                case name
+                case browserDownloadURL = "browser_download_url"
+            }
+        }
+
+        let tagName: String
+        let assets: [Asset]
+
+        enum CodingKeys: String, CodingKey {
+            case tagName = "tag_name"
+            case assets
+        }
+    }
+
+    private enum UpdateCheckError: LocalizedError {
+        case invalidResponse
+        case missingIPA
+        var errorDescription: String? {
+            switch self {
+            case .invalidResponse:
+                "GitHub did not return a valid release response."
+            case .missingIPA:
+                "The latest GitHub release does not include Tvo.ipa."
+            }
+        }
+    }
+
+    private struct PhoneUpdateBanner: View {
+        let update: PhoneAppUpdate
+        let download: () -> Void
+        let dismiss: () -> Void
+
+        var body: some View {
+            HStack(spacing: 12) {
+                Image(systemName: "arrow.down.circle.fill")
+                    .font(.system(size: 20))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Tvo update available")
+                        .font(.system(size: 14, weight: .semibold))
+                    Text("Version \(update.version) · Install with AltStore")
+                        .font(.system(size: 12))
+                        .opacity(0.75)
+                }
+                Button("Download IPA", action: download)
+                    .font(.system(size: 13, weight: .semibold))
+                Button(action: dismiss) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 11, weight: .semibold))
+                }
+                .accessibilityLabel("Dismiss update notice")
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 12)
+            .background(.ultraThinMaterial, in: Capsule())
+            .padding(.horizontal, 24)
+            .fixedSize(horizontal: false, vertical: true)
         }
     }
 

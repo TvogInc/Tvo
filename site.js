@@ -52,7 +52,7 @@ function configureReleaseDownload() {
   downloadLink.classList.add("is-live");
   macDownloadLink.classList.add("is-live");
   downloadLabel.textContent = "Download Tvo for iPhone";
-  downloadHint.textContent = "Unsigned IPA · Sign and install with Sideloadly. GitHub Releases opens in a new tab.";
+  downloadHint.textContent = "Unsigned IPA · Install with AltStore and AltServer for Mac. GitHub Releases opens in a new tab.";
   downloadLink.target = "_blank";
   downloadLink.rel = "noopener noreferrer";
   macDownloadLink.target = "_blank";

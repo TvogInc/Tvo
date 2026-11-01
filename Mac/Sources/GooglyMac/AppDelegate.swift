@@ -1,6 +1,7 @@
 import AppKit
 import Carbon.HIToolbox
 import GooglyShared
+import Sparkle
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
@@ -9,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let server = PhoneServer()
     private var statusItem: NSStatusItem!
     private lazy var host = RealtimeHost(overlay: overlay)
+    private var updaterController: SPUStandardUpdaterController?
     private weak var geminiKeyField: NSSecureTextField?
     private weak var geminiPasteStatus: NSTextField?
 
@@ -21,6 +23,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let menu = NSMenu()
         menu.delegate = self
         statusItem.menu = menu
+        if let publicKey = Bundle.main.object(forInfoDictionaryKey: "SUPublicEDKey") as? String,
+           !publicKey.isEmpty {
+            updaterController = SPUStandardUpdaterController(
+                startingUpdater: true,
+                updaterDelegate: nil,
+                userDriverDelegate: nil
+            )
+        }
 
         overlay.onFace = { [weak self] face in self?.server.send(face) }
         overlay.start()
@@ -130,6 +140,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if let raw = item.representedObject as? String, let trail = PointerTrail(rawValue: raw) { settings.trail = trail }
     }
     @objc private func talkTest() { overlay.talkTest() }
+    @objc private func checkForUpdates() { updaterController?.checkForUpdates(nil) }
 
     @objc private func setSize(_ item: NSMenuItem) { settings.cursorSize = Double(item.tag) }
     @objc private func setPhonePosition(_ item: NSMenuItem) { settings.phonePosition = Double(item.tag) / 100 }
@@ -322,6 +333,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(item("Open Meeting Notes", #selector(openNotes)))
         menu.addItem(item("Personality…", #selector(editPersonality)))
         menu.addItem(item("Gemini API Key…", #selector(editKeys)))
+        let updates = item(
+            updaterController == nil ? "Automatic Updates (setup required)" : "Check for Updates…",
+            #selector(checkForUpdates)
+        )
+        updates.isEnabled = updaterController != nil
+        menu.addItem(updates)
         menu.addItem(.separator())
 
         let trailMenu = NSMenu()

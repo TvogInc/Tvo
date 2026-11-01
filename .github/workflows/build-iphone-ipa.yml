@@ -1,0 +1,105 @@
+name: Build iPhone IPA
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set release version
+        id: version
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="0.1"
+          fi
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Build unsigned iPhone app
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project GooglyEyes.xcodeproj \
+            -target GooglyEyes \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/tvo-derived" \
+            MARKETING_VERSION="${{ steps.version.outputs.value }}" \
+            CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Package IPA
+        run: |
+          set -euo pipefail
+          APP="$RUNNER_TEMP/tvo-derived/Build/Products/Release-iphoneos/Tvo.app"
+          if [[ ! -d "$APP" ]]; then
+            echo "Xcode did not produce the expected iPhone app: $APP" >&2
+            exit 1
+          fi
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist" | grep -Fx 'co.tvog.tvo.phone'
+          mkdir -p build/ipa/Payload
+          ditto "$APP" build/ipa/Payload/Tvo.app
+          (cd build/ipa && /usr/bin/zip -qry "$GITHUB_WORKSPACE/build/Tvo.ipa" Payload)
+          /usr/bin/unzip -tq build/Tvo.ipa
+
+      - name: Build Mac app
+        env:
+          TVO_VERSION: ${{ steps.version.outputs.value }}
+          TVO_BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          ./scripts/build.sh
+          /usr/bin/ditto -c -k --sequesterRsrc --keepParent build/Tvo.app build/tvo.mac.zip
+          /usr/bin/unzip -tq build/tvo.mac.zip
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tvo-unsigned-ipa
+          path: |
+            build/Tvo.ipa
+            build/tvo.mac.zip
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Generate signed Mac update feed
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$SPARKLE_PRIVATE_KEY" ]]; then
+            echo "::error::Configure the SPARKLE_PRIVATE_KEY repository secret before publishing versioned releases."
+            exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/sparkle" build/update-feed
+          curl --fail --location --silent --show-error \
+            https://github.com/sparkle-project/Sparkle/releases/download/2.10.1/Sparkle-2.10.1.tar.xz \
+            --output "$RUNNER_TEMP/Sparkle.tar.xz"
+          tar -xf "$RUNNER_TEMP/Sparkle.tar.xz" -C "$RUNNER_TEMP/sparkle" ./bin/generate_appcast
+          cp build/tvo.mac.zip build/update-feed/tvo.mac.zip
+          release_url="https://github.com/TvogInc/Tvo/releases/download/$GITHUB_REF_NAME/"
+          printf '%s' "$SPARKLE_PRIVATE_KEY" | "$RUNNER_TEMP/sparkle/bin/generate_appcast" \
+            --ed-key-file - \
+            --download-url-prefix "$release_url" \
+            --link https://tvoginc.github.io/Tvo/ \
+            build/update-feed
+
+      - name: Attach apps and update feed to GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" build/Tvo.ipa build/tvo.mac.zip build/update-feed/appcast.xml --generate-notes

@@ -33,6 +33,12 @@ APP="$STAGE/Tvo.app"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$(swift build -c release --show-bin-path)/GooglyMac" "$APP/Contents/MacOS/GooglyMac"
 cp Mac/Info.plist "$APP/Contents/Info.plist"
+if [[ -n "${TVO_VERSION:-}" ]]; then
+  /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $TVO_VERSION" "$APP/Contents/Info.plist"
+fi
+if [[ -n "${TVO_BUILD_NUMBER:-}" ]]; then
+  /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $TVO_BUILD_NUMBER" "$APP/Contents/Info.plist"
+fi
 cp Shared/Fonts/*.ttf "$APP/Contents/Resources/"
 
 IDENTITY=$(security find-identity -v -p codesigning | grep '"Apple Development' | grep -v REVOKED | head -1 | awk '{print $2}' || true)
@@ -50,5 +56,5 @@ if [[ -n "$IPA_PATH" ]]; then
   scripts/install-iphone.sh "$IPA_PATH"
 else
   echo "iPhone install skipped: no prebuilt IPA was supplied."
-  echo "To hand off an IPA to Sideloadly, run: $0 path/to/Tvo.ipa"
+  echo "To hand off an IPA to AltStore, run: $0 path/to/Tvo.ipa"
 fi

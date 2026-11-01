@@ -8,11 +8,17 @@ let package = Package(
     products: [
         .executable(name: "GooglyMac", targets: ["GooglyMac"]),
     ],
+    dependencies: [
+        .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.10.1"),
+    ],
     targets: [
         .target(name: "GooglyShared", path: "Shared", exclude: ["Fonts"]),
         .executableTarget(
             name: "GooglyMac",
-            dependencies: ["GooglyShared"],
+            dependencies: [
+                "GooglyShared",
+                .product(name: "Sparkle", package: "Sparkle"),
+            ],
             path: "Mac/Sources/GooglyMac"
         ),
     ]

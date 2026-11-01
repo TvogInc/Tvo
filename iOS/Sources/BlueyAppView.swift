@@ -6,7 +6,9 @@ struct BlueyAppView: View {
     @ObservedObject var store: SessionStore
     @ObservedObject var live: LiveVoice
     @ObservedObject var link: MacLink
+    @ObservedObject var updateChecker: RootView.PhoneUpdateChecker
     var onClose: () -> Void
+    @Environment(\.openURL) private var openURL
     @State private var volume = 1.0
     @State private var typedQuestion = ""
     @AppStorage(Palette.characterColorKey) private var characterColorHex = String(Palette.berry1, radix: 16)
@@ -110,6 +112,51 @@ struct BlueyAppView: View {
                 ColorPicker("Tvo's colour", selection: characterColorSelection, supportsOpacity: false)
                     .font(.plexSans(14))
                     .foregroundStyle(.white)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    label("App updates")
+                    Button {
+                        Task { await updateChecker.check() }
+                    } label: {
+                        HStack(spacing: 8) {
+                            if updateChecker.status == .checking {
+                                ProgressView().tint(.white)
+                            } else {
+                                Image(systemName: "arrow.clockwise")
+                            }
+                            Text(updateChecker.status == .checking ? "Checking…" : "Check for updates")
+                        }
+                        .font(.plexSans(14).weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity, minHeight: 40)
+                        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(updateChecker.status == .checking)
+
+                    if let update = updateChecker.availableUpdate {
+                        Button {
+                            openURL(update.downloadURL)
+                        } label: {
+                            Text("Download update IPA \(update.version)")
+                                .font(.plexSans(13).weight(.semibold))
+                                .foregroundStyle(Color(hex: Palette.berry2))
+                        }
+                        .buttonStyle(.plain)
+                    } else if case .failed(let message) = updateChecker.status {
+                        Text(message)
+                            .font(.plexSans(11))
+                            .foregroundStyle(Color(hex: Palette.inkSoft))
+                    } else if updateChecker.status == .current {
+                        Text("You’re using the latest version.")
+                            .font(.plexSans(11))
+                            .foregroundStyle(Color(hex: Palette.inkSoft))
+                    } else if updateChecker.status == .noVersionedRelease {
+                        Text("No versioned update is available yet.")
+                            .font(.plexSans(11))
+                            .foregroundStyle(Color(hex: Palette.inkSoft))
+                    }
+                }
 
                 VStack(alignment: .leading, spacing: 8) {
                     label("Chirp volume")

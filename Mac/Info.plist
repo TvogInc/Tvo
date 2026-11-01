@@ -16,6 +16,16 @@
 	<string>0.1</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>SUFeedURL</key>
+	<string>https://github.com/TvogInc/Tvo/releases/latest/download/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>8NzJlXARUO7g1qmu9MFfUqcfkaYCiVBMsPap3wTtuTM=</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUAutomaticallyUpdate</key>
+	<true/>
+	<key>SUScheduledCheckInterval</key>
+	<integer>86400</integer>
 	<key>LSMinimumSystemVersion</key>
 	<string>14.0</string>
 	<key>LSUIElement</key>
