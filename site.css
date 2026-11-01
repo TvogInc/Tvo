@@ -406,11 +406,12 @@ h1, h2, h3 { font-family: var(--display); font-weight: 500; }
 .download-content .section-kicker { color: #c9caff; }
 .download-content h2 { margin: 13px 0 10px; font-size: 46px; line-height: 1.04; letter-spacing: -.03em; }
 .download-content > p:not(.download-hint) { max-width: 370px; color: #e2e3ff; font-size: 12px; line-height: 1.7; }
+.download-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .button-light { margin-top: 7px; background: white; color: #484c9d; box-shadow: 0 8px 22px #24285a35; }
 .button-light:hover { box-shadow: 0 13px 27px #24285a50; }
 .button-light > span:last-child { font-size: 19px; }
 .download-hint { max-width: 400px; margin: 11px 0 0; color: #cbd0f5; font-size: 9px; line-height: 1.55; }
-.release-download.is-live { background: #ddf5eb; color: #2f725c; }
+.release-download.is-live, .mac-release-download.is-live { background: #ddf5eb; color: #2f725c; }
 .download-decoration { position: absolute; color: #ffffff83; animation: sparkle 3s ease-in-out infinite; }
 .decoration-one { top: 27%; right: 20%; font-size: 34px; }
 .decoration-two { right: 11%; bottom: 18%; font-size: 46px; animation-delay: -1.6s; }
