@@ -31,6 +31,7 @@ if ("IntersectionObserver" in window) {
 
 const downloadLink = document.querySelector(".release-download");
 const downloadLabel = downloadLink.querySelector(".download-label");
+const macDownloadLink = document.querySelector(".mac-release-download");
 const downloadHint = document.querySelector(".download-hint");
 
 function configureReleaseDownload() {
@@ -46,12 +47,16 @@ function configureReleaseDownload() {
     return;
   }
 
-  downloadLink.href = `https://github.com/${repository}/releases/latest/`;
+  downloadLink.href = `https://github.com/${repository}/releases/latest/download/Tvo.ipa`;
+  macDownloadLink.href = `https://github.com/${repository}/releases/latest/download/tvo.mac.zip`;
   downloadLink.classList.add("is-live");
+  macDownloadLink.classList.add("is-live");
   downloadLabel.textContent = "Download Tvo for iPhone";
   downloadHint.textContent = "Unsigned IPA · Sign and install with Sideloadly. GitHub Releases opens in a new tab.";
   downloadLink.target = "_blank";
   downloadLink.rel = "noopener noreferrer";
+  macDownloadLink.target = "_blank";
+  macDownloadLink.rel = "noopener noreferrer";
 }
 
 configureReleaseDownload();
