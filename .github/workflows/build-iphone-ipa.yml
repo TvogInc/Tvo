@@ -1,0 +1,58 @@
+name: Build iPhone IPA
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Build unsigned iPhone app
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project GooglyEyes.xcodeproj \
+            -target GooglyEyes \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/tvo-derived" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Package IPA
+        run: |
+          set -euo pipefail
+          APP="$RUNNER_TEMP/tvo-derived/Build/Products/Release-iphoneos/Tvo.app"
+          if [[ ! -d "$APP" ]]; then
+            echo "Xcode did not produce the expected iPhone app: $APP" >&2
+            exit 1
+          fi
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist" | grep -Fx 'co.tvog.tvo.phone'
+          mkdir -p build/ipa/Payload
+          ditto "$APP" build/ipa/Payload/Tvo.app
+          (cd build/ipa && /usr/bin/zip -qry "$GITHUB_WORKSPACE/build/Tvo.ipa" Payload)
+          /usr/bin/unzip -tq build/Tvo.ipa
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tvo-unsigned-ipa
+          path: build/Tvo.ipa
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Attach IPA to GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" build/Tvo.ipa --generate-notes

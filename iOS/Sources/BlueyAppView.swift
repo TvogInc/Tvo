@@ -36,11 +36,9 @@ struct BlueyAppView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 HStack(spacing: 12) {
-                    Image("TvoLogo")
-                        .resizable()
-                        .scaledToFit()
+                    TvoMascotIcon()
                         .frame(width: 54, height: 54)
-                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Tvo")
                             .font(.fredoka(28))

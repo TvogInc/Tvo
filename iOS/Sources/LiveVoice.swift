@@ -119,18 +119,24 @@ final class LiveVoice: NSObject, ObservableObject, URLSessionWebSocketDelegate {
                 }
                 self.tokenTimeout = timeout
                 DispatchQueue.main.asyncAfter(deadline: .now() + 20, execute: timeout)
-                requestToken { [weak self] token in
-                    DispatchQueue.main.async { [weak self] in
-                        guard let self else { return }
-                        guard self.state == .waking else { return }
-                        self.tokenTimeout?.cancel()
-                        self.tokenTimeout = nil
-                        guard let token else {
-                            self.reportError("I couldn't reach Tvo on your Mac. Make sure Tvo is running and your phone can find it on the local network.")
-                            self.sleep()
-                            return
-                        }
-                        self.connect(token)
+                self.requestSessionToken(requestToken)
+            }
+        }
+    }
+
+    private func requestSessionToken(_ requestToken: @escaping (@escaping (String?) -> Void) -> Void) {
+        guard state == .waking, socket == nil else { return }
+        requestToken { [weak self] token in
+            DispatchQueue.main.async { [weak self] in
+                guard let self, self.state == .waking, self.socket == nil else { return }
+                if let token {
+                    self.tokenTimeout?.cancel()
+                    self.tokenTimeout = nil
+                    self.connect(token)
+                } else {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+                        guard let self, self.state == .waking, self.socket == nil else { return }
+                        self.requestSessionToken(requestToken)
                     }
                 }
             }
@@ -425,7 +431,7 @@ final class LiveVoice: NSObject, ObservableObject, URLSessionWebSocketDelegate {
             if toolsRunning == 0, !sleepAfterReply {
                 if askWhenReady {
                     askWhenReady = false
-                    reportError("Tvo is ready now. Hold the screen and repeat your question.")
+                    onCaption?("Tvo is ready now. Hold the screen and repeat your question.", true)
                 }
             }
             finishIfQuiet()
@@ -459,7 +465,7 @@ final class LiveVoice: NSObject, ObservableObject, URLSessionWebSocketDelegate {
         if askWhenReady {
             askWhenReady = false
             setState(.listening)
-            reportError("Tvo is ready now. Hold the screen and repeat your question.")
+            onCaption?("Tvo is ready now. Hold the screen and repeat your question.", true)
         } else {
             setState(holding ? .asking : .listening)
         }

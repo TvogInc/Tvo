@@ -65,11 +65,15 @@ struct TvoBlueberry: View {
                     .offset(y: size * 0.10)
 
                 // leaves
-                HStack(spacing: size * 0.14) {
-                    TvoBerryLeaf(rotation: -20)
-                    TvoBerryLeaf(rotation: 10)
+                HStack(spacing: size * -0.04) {
+                    TvoBerryLeaf(rotation: -38)
+                        .frame(width: size * 0.17, height: size * 0.18)
+                    TvoBerryLeaf(rotation: 0)
+                        .frame(width: size * 0.17, height: size * 0.18)
+                    TvoBerryLeaf(rotation: 38)
+                        .frame(width: size * 0.17, height: size * 0.18)
                 }
-                .position(x: size * 0.5, y: size * 0.14)
+                .position(x: size * 0.5, y: size * 0.15)
 
                 // eyes
                 HStack(spacing: size * 0.28) {
@@ -130,18 +134,25 @@ private struct TvoBerryLeaf: View {
         .rotationEffect(.degrees(rotation))
     }
 
-    private var leafPath: Path {
-        Path { p in
-            p.move(to: CGPoint(x: 0, y: 0))
-            p.addQuadCurve(to: CGPoint(x: 14, y: -42), control: CGPoint(x: 6, y: -14))
-            p.addQuadCurve(to: CGPoint(x: 0, y: 0), control: CGPoint(x: -6, y: -14))
+    private var leafPath: LeafShape { LeafShape() }
+
+    private struct LeafShape: Shape {
+        func path(in rect: CGRect) -> Path {
+            Path { p in
+                p.move(to: CGPoint(x: rect.midX, y: rect.maxY))
+                p.addQuadCurve(to: CGPoint(x: rect.midX, y: rect.minY),
+                               control: CGPoint(x: rect.maxX, y: rect.midY))
+                p.addQuadCurve(to: CGPoint(x: rect.midX, y: rect.maxY),
+                               control: CGPoint(x: rect.minX, y: rect.midY))
+                p.closeSubpath()
+            }
         }
     }
 }
 
 // MARK: - Dot animation forming "TVO"
 
-/// Dots scatter across the screen, then converge to form the letters "TVO", then idle with a gentle pulse.
+/// A burst of blueberry-colored dots travels across the screen and gathers into "TVO".
 struct TvoDotLogo: View {
     @State private var dots: [Dot] = []
     @State private var startTime: Double = 0
@@ -173,51 +184,47 @@ struct TvoDotLogo: View {
 
     private struct Dot {
         let target: CGPoint
-        let home: CGPoint
+        let scatter: CGPoint
         let color: Color
         let r: CGFloat
+        let delay: Double
 
-        /// Phase timings (seconds).
-        private static let scatterDuration = 1.6
-        private static let convergeDuration = 1.4
-        private static let settleDuration = 0.8
+        private static let scatterDuration = 0.7
+        private static let convergeDuration = 1.35
 
         func position(at t: Double, size: CGSize) -> CGPoint {
-            if t < Self.scatterDuration {
-                // Phase 1: drift slowly outward from home
-                let p = Self.easeOutCubic(t / Self.scatterDuration)
-                let drift = 22.0 * (1 - p)
+            let elapsed = max(0, t - delay)
+            let origin = CGPoint(x: size.width / 2, y: size.height / 2)
+            if elapsed < Self.scatterDuration {
+                let progress = Self.easeOutCubic(elapsed / Self.scatterDuration)
                 return CGPoint(
-                    x: home.x + sin(t * 1.3 + Double(target.x).truncatingRemainder(dividingBy: 7)) * drift,
-                    y: home.y + cos(t * 0.9 + Double(target.y).truncatingRemainder(dividingBy: 7)) * drift
+                    x: origin.x + (scatter.x - origin.x) * progress,
+                    y: origin.y + (scatter.y - origin.y) * progress
                 )
-            } else if t < Self.scatterDuration + Self.convergeDuration {
-                // Phase 2: converge toward the letter shape
-                let p = (t - Self.scatterDuration) / Self.convergeDuration
-                let ease = Self.easeInOutCubic(p)
+            } else if elapsed < Self.scatterDuration + Self.convergeDuration {
+                let progress = Self.easeInOutCubic((elapsed - Self.scatterDuration) / Self.convergeDuration)
                 return CGPoint(
-                    x: home.x + (target.x - home.x) * ease,
-                    y: home.y + (target.y - home.y) * ease
+                    x: scatter.x + (target.x - scatter.x) * progress,
+                    y: scatter.y + (target.y - scatter.y) * progress
                 )
             } else {
-                // Phase 3: settled — gentle breathing idle around the letter
-                let idle = t - Self.scatterDuration - Self.convergeDuration
+                let idle = elapsed - Self.scatterDuration - Self.convergeDuration
                 return CGPoint(
-                    x: target.x + sin(idle * 1.5 + Double(target.x).truncatingRemainder(dividingBy: 5)) * 2.5,
-                    y: target.y + cos(idle * 1.1 + Double(target.y).truncatingRemainder(dividingBy: 5)) * 2.5
+                    x: target.x + sin(idle * 1.5 + Double(target.x).truncatingRemainder(dividingBy: 5)) * 1.2,
+                    y: target.y + cos(idle * 1.1 + Double(target.y).truncatingRemainder(dividingBy: 5)) * 1.2
                 )
             }
         }
 
-        /// Fade in during scatter, hold, then very gently fade toward the end for depth.
         func opacity(at t: Double) -> Double {
-            if t < Self.scatterDuration {
-                return Self.easeOutCubic(t / Self.scatterDuration) * 0.85 + 0.15
-            } else if t < Self.scatterDuration + Self.convergeDuration {
+            let elapsed = max(0, t - delay)
+            if elapsed < Self.scatterDuration {
+                return Self.easeOutCubic(elapsed / Self.scatterDuration)
+            } else if elapsed < Self.scatterDuration + Self.convergeDuration {
                 return 1.0
             } else {
-                let idle = t - Self.scatterDuration - Self.convergeDuration
-                return 0.92 + 0.08 * sin(idle * 2.0)
+                let idle = elapsed - Self.scatterDuration - Self.convergeDuration
+                return 0.94 + 0.06 * sin(idle * 2.0)
             }
         }
 
@@ -232,31 +239,29 @@ struct TvoDotLogo: View {
     private static func makeDots(in size: CGSize) -> [Dot] {
         let targets = samplePoints("TVO", in: size)
         guard !targets.isEmpty else { return [] }
-        let count = min(max(targets.count * 2, 700), 1800)
         let colors: [Color] = [
             Color(hex: Palette.berry1), Color(hex: Palette.berry2),
             Color(hex: Palette.berry3), Color(hex: Palette.berry4),
-            Color(hex: Palette.inkSoft),
         ]
-        var dots: [Dot] = []
-        for i in 0..<count {
-            let target = targets[i % targets.count]
-            let h = Double(i)
-            // Homes spread evenly across the full screen so the scatter reads as one burst.
-            let home = CGPoint(
-                x: size.width * 0.08 + CGFloat(sin(h * 0.41)) * size.width * 0.84
-                    + CGFloat(cos(h * 0.27)) * 40,
-                y: size.height * 0.08 + CGFloat(cos(h * 0.33)) * size.height * 0.84
-                    + CGFloat(sin(h * 0.19)) * 40
-            )
-            dots.append(Dot(
-                target: target,
-                home: home,
-                color: colors[Int(h.truncatingRemainder(dividingBy: Double(colors.count))) % colors.count],
-                r: 1.2 + CGFloat(h.truncatingRemainder(dividingBy: 3)) * 0.6
-            ))
+        var seed: UInt64 = 0x544F_5642
+        func randomUnit() -> CGFloat {
+            seed = seed &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
+            return CGFloat(seed >> 11) / CGFloat(1 << 53)
         }
-        return dots
+
+        return targets.enumerated().map { index, target in
+            let scatter = CGPoint(
+                x: (randomUnit() * 1.18 - 0.09) * size.width,
+                y: (randomUnit() * 1.18 - 0.09) * size.height
+            )
+            return Dot(
+                target: target,
+                scatter: scatter,
+                color: colors[index % colors.count],
+                r: 2.2 + randomUnit() * 1.8,
+                delay: randomUnit() * 0.32
+            )
+        }
     }
 
     /// Render the text to an image and sample alpha pixels as dot targets.
@@ -267,12 +272,16 @@ struct TvoDotLogo: View {
             UIColor.white.set()
             let paragraph = NSMutableParagraphStyle()
             paragraph.alignment = .center
-            let fontSize = min(size.width, size.height) * 0.20
+            let fontSize = min(size.width * 0.24, size.height * 0.68)
             let attrs: [NSAttributedString.Key: Any] = [
-                .font: UIFont.boldSystemFont(ofSize: fontSize),
+                .font: UIFont.systemFont(ofSize: fontSize, weight: .heavy),
                 .paragraphStyle: paragraph,
             ]
-            (text as NSString).draw(in: CGRect(origin: .zero, size: size), withAttributes: attrs)
+            let textHeight = fontSize * 1.2
+            (text as NSString).draw(
+                in: CGRect(x: 0, y: (size.height - textHeight) / 2, width: size.width, height: textHeight),
+                withAttributes: attrs
+            )
         }
         let cg = img.cgImage
         let width = cg?.width ?? 0
@@ -293,7 +302,7 @@ struct TvoDotLogo: View {
         }
         let scaleX = CGFloat(width) / size.width
         let scaleY = CGFloat(height) / size.height
-        let sampleStride = 6
+        let sampleStride = 5
         var points: [CGPoint] = []
         for y in stride(from: 0, to: height, by: sampleStride) {
             for x in stride(from: 0, to: width, by: sampleStride) {
