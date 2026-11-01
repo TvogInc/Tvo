@@ -18,9 +18,9 @@ Create a Gemini API key in [Google AI Studio](https://aistudio.google.com/apikey
 
 ### Automatic updates
 
-The Mac app checks for updates daily and automatically installs signed updates. Its Sparkle EdDSA public key is in `Mac/Info.plist`; the matching private key is in the maintainer’s login Keychain and the repository’s `SPARKLE_PRIVATE_KEY` GitHub Actions secret. Never commit or share the private key. The iPhone app checks versioned GitHub Releases daily and links to a newer IPA; iOS requires signing and reinstalling through AltStore Classic with AltServer, so the app cannot install its own update.
+The Mac app checks for updates daily and automatically installs signed updates. Its Sparkle EdDSA public key is in `Mac/Info.plist`; the matching private key is in the maintainer’s login Keychain and the repository’s `SPARKLE_PRIVATE_KEY` GitHub Actions secret. Never commit or share the private key. The iPhone app checks versioned GitHub Releases daily and links to a newer IPA; iOS requires signing and reinstalling through Sideloadly, so the app cannot install its own update.
 
-AltServer for macOS supports Apple Silicon and requires macOS 11 or later. To install Tvo, install AltStore on the iPhone using AltServer, download `Tvo.ipa` to the iPhone, then use AltStore’s **My Apps** tab and **+** button to select the IPA. Keep AltServer available on the Mac to sign and refresh the app.
+To install Tvo, download `Tvo.ipa` on a Mac, open Sideloadly, connect and unlock the iPhone, drag the IPA into Sideloadly, select the device, and follow its signing prompts. Sideloadly currently advertises Apple Silicon and macOS 10.12+ support. If AltServer fails with an anisette `machineID` error, use Sideloadly instead.
 
 Publish releases with version tags such as `v0.1.1`. The release workflow attaches `tvo.mac.zip`, `Tvo.ipa`, and the signed Sparkle appcast. The first updater-enabled Mac release must be installed manually; older Mac builds do not contain Sparkle.
 

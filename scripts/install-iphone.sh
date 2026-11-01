@@ -27,13 +27,12 @@ if ! /usr/bin/unzip -Z1 "$IPA_PATH" | /usr/bin/grep -Eq '^Payload/[^/]+\.app/Inf
   exit 1
 fi
 
-if ! /usr/bin/open -a AltServer >/dev/null 2>&1; then
-  echo "AltServer is not installed. Download it from https://cdn.altstore.io/file/altstore/altserver.zip and try again." >&2
+if ! /usr/bin/open -a Sideloadly >/dev/null 2>&1; then
+  echo "Sideloadly is not installed. Download it from https://sideloadly.io/SideloadlySetup.dmg and try again." >&2
   exit 1
 fi
 
 /usr/bin/open -R "$IPA_PATH"
-echo "AltServer is open and Finder has selected the IPA."
-echo "Move the IPA to your iPhone (for example with AirDrop), then in AltStore open My Apps, tap +, and select the IPA."
-echo "Keep AltServer running on your Mac to sign and refresh the app."
-echo "This handoff does not collect or store Apple ID credentials in Tvo."
+echo "Sideloadly is open and Finder has selected the IPA."
+echo "Drag the IPA into Sideloadly, choose your iPhone, and follow its signing prompts."
+echo "Tvo does not handle your Apple ID credentials."

@@ -56,5 +56,5 @@ if [[ -n "$IPA_PATH" ]]; then
   scripts/install-iphone.sh "$IPA_PATH"
 else
   echo "iPhone install skipped: no prebuilt IPA was supplied."
-  echo "To hand off an IPA to AltStore, run: $0 path/to/Tvo.ipa"
+  echo "To hand off an IPA to Sideloadly, run: $0 path/to/Tvo.ipa"
 fi

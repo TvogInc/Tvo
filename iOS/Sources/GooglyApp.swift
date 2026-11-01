@@ -271,7 +271,7 @@ struct RootView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Tvo update available")
                         .font(.system(size: 14, weight: .semibold))
-                    Text("Version \(update.version) · Install with AltStore")
+                    Text("Version \(update.version) · Install with Sideloadly on Mac")
                         .font(.system(size: 12))
                         .opacity(0.75)
                 }
