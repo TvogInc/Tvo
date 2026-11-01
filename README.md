@@ -18,7 +18,7 @@ Create a Gemini API key in [Google AI Studio](https://aistudio.google.com/apikey
 
 ### Website
 
-The Landing page is at [https://tvoginc.github.io/Tvo/](https://tvoginc.github.io/Tvo/). Here can see a tutorial to install Tvo, and install the app.
+The Landing page is at [https://tvoginc.github.io/Tvo/](https://tvoginc.github.io/Tvo/). Here can see a tutorial to install Tvo, and install the apps.
 
 Shortcuts work anywhere:
 
