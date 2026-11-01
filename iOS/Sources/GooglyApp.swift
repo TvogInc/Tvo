@@ -65,7 +65,7 @@ struct RootView: View {
                dismissedUpdateVersion != update.version {
                 PhoneUpdateBanner(
                     update: update,
-                    download: { openURL(update.downloadURL) },
+                    showGuide: { openURL(URL(string: "https://tvoginc.github.io/Tvo/#install")!) },
                     dismiss: { dismissedUpdateVersion = update.version }
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -132,7 +132,6 @@ struct RootView: View {
 
     struct PhoneAppUpdate: Equatable {
         let version: String
-        let downloadURL: URL
     }
 
     @MainActor
@@ -171,14 +170,10 @@ struct RootView: View {
                 let releases = try JSONDecoder().decode([GitHubRelease].self, from: data)
                 guard let release = releases.first(where: {
                     compareVersions($0.tagName, currentVersion) != nil
-                        && $0.assets.contains(where: { $0.name == "Tvo.ipa" })
                 }) else {
                     availableUpdate = nil
                     status = .noVersionedRelease
                     return
-                }
-                guard let downloadURL = release.assets.first(where: { $0.name == "Tvo.ipa" })?.browserDownloadURL else {
-                    throw UpdateCheckError.missingIPA
                 }
                 guard let comparison = compareVersions(release.tagName, currentVersion) else {
                     status = .noVersionedRelease
@@ -189,7 +184,7 @@ struct RootView: View {
                     status = .current
                     return
                 }
-                availableUpdate = PhoneAppUpdate(version: release.tagName, downloadURL: downloadURL)
+                availableUpdate = PhoneAppUpdate(version: release.tagName)
                 status = .available
             } catch {
                 availableUpdate = nil
@@ -227,41 +222,26 @@ struct RootView: View {
     }
 
     private struct GitHubRelease: Decodable {
-        struct Asset: Decodable {
-            let name: String
-            let browserDownloadURL: URL
-
-            enum CodingKeys: String, CodingKey {
-                case name
-                case browserDownloadURL = "browser_download_url"
-            }
-        }
-
         let tagName: String
-        let assets: [Asset]
 
         enum CodingKeys: String, CodingKey {
             case tagName = "tag_name"
-            case assets
         }
     }
 
     private enum UpdateCheckError: LocalizedError {
         case invalidResponse
-        case missingIPA
         var errorDescription: String? {
             switch self {
             case .invalidResponse:
                 "GitHub did not return a valid release response."
-            case .missingIPA:
-                "The latest GitHub release does not include Tvo.ipa."
             }
         }
     }
 
     private struct PhoneUpdateBanner: View {
         let update: PhoneAppUpdate
-        let download: () -> Void
+        let showGuide: () -> Void
         let dismiss: () -> Void
 
         var body: some View {
@@ -271,11 +251,11 @@ struct RootView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Tvo update available")
                         .font(.system(size: 14, weight: .semibold))
-                    Text("Version \(update.version) · Install with Sideloadly on Mac")
+                    Text("Version \(update.version) · Install with Xcode")
                         .font(.system(size: 12))
                         .opacity(0.75)
                 }
-                Button("Download IPA", action: download)
+                Button("Xcode guide", action: showGuide)
                     .font(.system(size: 13, weight: .semibold))
                 Button(action: dismiss) {
                     Image(systemName: "xmark")

@@ -3,12 +3,10 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-if (( $# > 1 )); then
-  echo "Usage: $0 [prebuilt-Tvo.ipa]" >&2
+if (( $# != 0 )); then
+  echo "Usage: $0" >&2
   exit 2
 fi
-
-IPA_PATH="${1:-${TVO_IPA:-}}"
 
 if [[ "$(uname -s)" != "Darwin" ]]; then
   echo "Tvo's build script only supports macOS." >&2
@@ -51,10 +49,4 @@ fi
 rm -rf "$FINAL"
 ditto --norsrc --noextattr "$APP" "$FINAL"
 echo "Built Mac app: $FINAL"
-
-if [[ -n "$IPA_PATH" ]]; then
-  scripts/install-iphone.sh "$IPA_PATH"
-else
-  echo "iPhone install skipped: no prebuilt IPA was supplied."
-  echo "To hand off an IPA to Sideloadly, run: $0 path/to/Tvo.ipa"
-fi
+echo "To build and install the iPhone app, open GooglyEyes.xcodeproj in Xcode."

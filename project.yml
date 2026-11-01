@@ -23,7 +23,6 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: YES
         CODE_SIGN_STYLE: Automatic
-        DEVELOPMENT_TEAM: 2P99B5UGDX
     info:
       path: iOS/Info.plist
       properties:

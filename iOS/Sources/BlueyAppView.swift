@@ -136,9 +136,9 @@ struct BlueyAppView: View {
 
                     if let update = updateChecker.availableUpdate {
                         Button {
-                            openURL(update.downloadURL)
+                            openURL(URL(string: "https://tvoginc.github.io/Tvo/#install")!)
                         } label: {
-                            Text("Download update IPA \(update.version)")
+                            Text("Xcode install guide for \(update.version)")
                                 .font(.plexSans(13).weight(.semibold))
                                 .foregroundStyle(Color(hex: Palette.berry2))
                         }

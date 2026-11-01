@@ -218,24 +218,24 @@
           <div class="install-heading">
             <div class="section-kicker">YOUR Tvo, YOUR WAY</div>
             <h2>Let’s get your<br><span class="text-gradient">berry buddy home.</span></h2>
-            <p>Download the latest Mac app and iPhone IPA, then install Tvo on both devices.</p>
+            <p>Download the Mac app and build the iPhone app from source with Xcode, using your own Apple account to sign it.</p>
           </div>
           <div class="install-steps">
             <div class="install-step">
-              <span>1</span><div><h3>Download Tvo for Mac</h3><p>Use the <a href="#download">Download Tvo for Mac</a> button below to get the latest <code>tvo.app</code>. Unzip it, move <code>Tvo.app</code> to Applications, then open it.</p></div>
+              <span>1</span><div><h3>Download Tvo for Mac</h3><p>Use the <a href="#download">Download Tvo for Mac</a> button below to get the latest <code>tvo.mac.zip</code>. Unzip it, move <code>Tvo.app</code> to Applications, then open it.</p></div>
             </div>
             <div class="install-step">
-              <span>2</span><div><h3>Get Sideloadly for Mac</h3><p>Download and open Sideloadly on your Mac. Its current release supports Apple Silicon and macOS 10.12 or later.</p><a class="button button-primary" href="https://sideloadly.io/SideloadlySetup.dmg" target="_blank" rel="noopener noreferrer">Download Sideloadly for Mac <span aria-hidden="true">↓</span></a></div>
+              <span>2</span><div><h3>Download the iPhone source</h3><p>Use the <a href="#download">Download iPhone source for Xcode</a> button below, then unzip the source archive.</p></div>
             </div>
             <div class="install-step">
-              <span>3</span><div><h3>Download the iPhone IPA</h3><p>On your Mac, use the <a href="#download">Download Tvo for iPhone</a> button below to save the latest <code>Tvo.ipa</code>.</p></div>
+              <span>3</span><div><h3>Set up signing in Xcode</h3><p>Open <code>GooglyEyes.xcodeproj</code>, connect and unlock your iPhone, then select the <strong>GooglyEyes</strong> project and <strong>GooglyEyes</strong> target. Under <strong>Signing &amp; Capabilities</strong>, enable <strong>Automatically manage signing</strong> and choose your Personal Team (or paid developer team). Sign in to your Apple Account in Xcode first if needed. For an update, set the target’s <strong>General → Identity → Version</strong> to the release version (for example, <code>v0.1.1</code> becomes <code>0.1.1</code>) before building.</p></div>
             </div>
             <div class="install-step">
-              <span>4</span><div><h3>Install Tvo with Sideloadly</h3><p>Connect and unlock your iPhone, drag <code>Tvo.ipa</code> into Sideloadly, select your device, then follow Sideloadly’s prompts to sign and install.</p></div>
+              <span>4</span><div><h3>Build and install Tvo</h3><p>Choose your iPhone as the run destination and press <strong>Run</strong> in Xcode. Trust the computer if prompted. If Xcode reports that the bundle identifier is unavailable, change it to a unique identifier in <strong>Signing &amp; Capabilities</strong>. If prompted on iPhone, enable Developer Mode under <strong>Settings → Privacy &amp; Security</strong>.</p></div>
             </div>
           </div>
           <p class="install-footnote">
-            The iPhone IPA is unsigned. Free Apple ID signatures expire periodically; Sideloadly offers optional automatic refreshing. If AltServer showed an anisette <code>machineID</code> error, these steps use Sideloadly instead.
+            This builds from the project source and signs locally through Xcode; no third-party sideloader or unsigned Mac installer is needed. We verified the current Sideloadly Mac app is unsigned, so macOS cannot verify its publisher or integrity. Don’t bypass a Gatekeeper warning to run it. <a href="https://support.apple.com/en-us/102445" target="_blank" rel="noopener noreferrer">About Gatekeeper and safely opening apps</a>.
           </p>
         </div>
       </section>
@@ -248,17 +248,17 @@
             <img src="iOS/Assets.xcassets/AppIcon.appiconset/AppIcon.png" alt="" width="1024" height="1024">
             <div class="section-kicker">A LITTLE BUDDY GOES A LONG WAY</div>
             <h2>Make room for<br>one more friend.</h2>
-            <p>Get the latest iPhone build and install it with Sideloadly on your Mac.</p>
+            <p>Get the iPhone source and use Xcode to build and install it directly on your iPhone.</p>
             <div class="download-actions">
               <a class="button button-light release-download" href="#install">
-                <span class="download-label">See download instructions</span><span aria-hidden="true">↓</span>
+                <span class="download-label">Download iPhone source for Xcode</span><span aria-hidden="true">↓</span>
               </a>
               <a class="button button-light mac-release-download" href="#install">
                 <span>Download Tvo for Mac</span><span aria-hidden="true">↓</span>
               </a>
             </div>
             <p class="download-hint" aria-live="polite">
-              The iPhone IPA is provided by the project’s GitHub Actions release workflow.
+              Source code from GitHub · Build and sign locally with Xcode.
             </p>
           </div>
         </div>
@@ -271,12 +271,12 @@
         </div>
         <div class="faq-list">
           <details class="faq-item reveal">
-            <summary>Do I need Xcode on my Mac?<span></span></summary>
-            <p>No. Sideloadly signs and installs the iPhone IPA from your Mac; Xcode is not required.</p>
+            <summary>Do I need Xcode?<span></span></summary>
+            <p>Yes, to build and install the iPhone app from source. You don’t need Xcode to install the Mac app.</p>
           </details>
           <details class="faq-item reveal">
             <summary>Is Tvo on the App Store?<span></span></summary>
-            <p>No. The iPhone build is an unsigned IPA that you sign and sideload yourself using Sideloadly. It is not an App Store download.</p>
+            <p>No. Build the iPhone app from source and install it directly with Xcode; it is not an App Store download.</p>
           </details>
           <details class="faq-item reveal">
             <summary>What does Tvo need to connect?<span></span></summary>

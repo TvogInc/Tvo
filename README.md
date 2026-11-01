@@ -18,15 +18,17 @@ Create a Gemini API key in [Google AI Studio](https://aistudio.google.com/apikey
 
 ### Automatic updates
 
-The Mac app checks for updates daily and automatically installs signed updates. Its Sparkle EdDSA public key is in `Mac/Info.plist`; the matching private key is in the maintainer’s login Keychain and the repository’s `SPARKLE_PRIVATE_KEY` GitHub Actions secret. Never commit or share the private key. The iPhone app checks versioned GitHub Releases daily and links to a newer IPA; iOS requires signing and reinstalling through Sideloadly, so the app cannot install its own update.
+The Mac app checks for updates daily and automatically installs signed updates. Its Sparkle EdDSA public key is in `Mac/Info.plist`; the matching private key is in the maintainer’s login Keychain and the repository’s `SPARKLE_PRIVATE_KEY` GitHub Actions secret. Never commit or share the private key. The iPhone app checks versioned GitHub Releases daily and opens the Xcode installation guide when an update is available. Download the source archive on your Mac, open it in Xcode, and run it on your connected iPhone to build, sign, and install the update.
 
-To install Tvo, download `Tvo.ipa` on a Mac, open Sideloadly, connect and unlock the iPhone, drag the IPA into Sideloadly, select the device, and follow its signing prompts. Sideloadly currently advertises Apple Silicon and macOS 10.12+ support. If AltServer fails with an anisette `machineID` error, use Sideloadly instead.
+To install Tvo on iPhone, download the source archive from the [Tvo website](https://tvoginc.github.io/Tvo/), unzip it, and open `GooglyEyes.xcodeproj` in Xcode. Connect and unlock your iPhone. In the `GooglyEyes` target’s **Signing & Capabilities**, enable automatic signing and select your Personal Team or paid developer team, then select your iPhone as the run destination and press **Run**. If Xcode reports the bundle identifier is unavailable, choose a unique identifier in that pane. For updates, set **General → Identity → Version** to the release version without its leading `v` (for example, `v0.1.1` becomes `0.1.1`) before building. Xcode may ask you to enable Developer Mode on the iPhone.
 
-Publish releases with version tags such as `v0.1.1`. The release workflow attaches `tvo.mac.zip`, `Tvo.ipa`, and the signed Sparkle appcast. The first updater-enabled Mac release must be installed manually; older Mac builds do not contain Sparkle.
+The iPhone project intentionally has no developer team hard-coded, so you can select your own Apple account in Xcode. This builds and signs from source locally without a third-party sideloader. The current Sideloadly Mac app downloaded from its official site is unsigned and rejected by Gatekeeper; this project does not recommend overriding that warning.
+
+Publish releases with version tags such as `v0.1.1`. The release workflow attaches `tvo.mac.zip`, an unsigned `Tvo.ipa` for compatible tools, and the signed Sparkle appcast. The first updater-enabled Mac release must be installed manually; older Mac builds do not contain Sparkle.
 
 ### Website
 
-The Landing page is at [https://tvoginc.github.io/Tvo/](https://tvoginc.github.io/Tvo/). Here can see a tutorial to install Tvo, and install the apps.
+The landing page is at [https://tvoginc.github.io/Tvo/](https://tvoginc.github.io/Tvo/) and includes the Xcode iPhone install tutorial and Mac app download.
 
 Shortcuts work anywhere:
 
