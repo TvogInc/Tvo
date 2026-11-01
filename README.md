@@ -48,7 +48,7 @@ To publish an IPA with a GitHub release, push a version tag such as `v0.1.0`. Th
 
 ### Website
 
-The static landing page is `index.html` with `site.css` and `site.js`. Publish the repository root with GitHub Pages to host it without a separate build step. The download button automatically links to the latest `Tvo.ipa` GitHub release when hosted at `owner.github.io/repository/`. For a custom domain or another host, set the `github-repository` meta tag in `index.html` to `owner/repository`.
+The Landing page is at [https://tvoginc.github.io/Tvo/](https://tvoginc.github.io/Tvo/). Here you could also see a tutorial.
 
 Shortcuts work anywhere:
 
