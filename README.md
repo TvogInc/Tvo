@@ -16,39 +16,9 @@ Type questions in the iPhone app during an active session, or hold Tvo's face to
 
 Create a Gemini API key in [Google AI Studio](https://aistudio.google.com/apikey), then add it from the menu bar's **Gemini API Key…**. It is stored in ~/Library/Application Support/Googly/keys.json (private to your user), never in this repo.
 
-## Installing Tvo
-
-```
-./scripts/build.sh
-open "build/Tvo.app"
-```
-
-The script builds the macOS app at `build/Tvo.app` using Swift already available on the Mac. It does not install Xcode or other dependencies.
-
-To hand a prebuilt iPhone IPA to Sideloadly, pass its path:
-
-```
-./scripts/build.sh path/to/Tvo.ipa
-```
-
-Or run `scripts/install-iphone.sh path/to/Tvo.ipa` after building the Mac app. Sideloadly must already be installed; the script opens it and selects the IPA in Finder so you can drag it into Sideloadly, choose the iPhone, and complete signing there. Tvo does not collect Apple ID credentials. The local build script does not create an iPhone IPA; creating one from source requires an iOS SDK, which is not included with the macOS Command Line Tools. The GitHub Actions workflow below builds the IPA remotely. Sideloadly advertises macOS 10.12+ and iOS 27+ support, but this workflow has not been tested on macOS 27.
-
-### Build and install the iPhone app without Xcode on your Mac
-
-The GitHub Actions workflow builds an **unsigned** iPhone IPA on a GitHub-hosted macOS runner. Your Mac does not need Xcode. The iPhone app still needs to be signed for your Apple ID before installation; Sideloadly handles that on your Mac.
-
-1. Push this project, including `.github/workflows/build-iphone-ipa.yml`, to a GitHub repository with Actions enabled.
-2. On GitHub, open **Actions** → **Build iPhone IPA** → **Run workflow**. Wait for the run to finish.
-3. Open the completed workflow run, download the `Tvo-unsigned-ipa` artifact, and unzip it to get `Tvo.ipa`.
-4. Install and open [Sideloadly](https://sideloadly.io/) on your Mac. Connect your iPhone by USB, unlock it, and trust the Mac if prompted.
-5. Drag `Tvo.ipa` into Sideloadly, select your iPhone, enter your Apple ID in Sideloadly, and click **Start**. Complete any verification prompts with Apple/Sideloadly. Tvo itself does not receive or store your Apple ID password.
-6. If prompted, enable Developer Mode on the iPhone in **Settings** → **Privacy & Security** → **Developer Mode**, then trust the developer profile in **Settings** → **General** → **VPN & Device Management**.
-
-To publish an IPA with a GitHub release, push a version tag such as `v0.1.0`. The workflow builds the same IPA and attaches `Tvo.ipa` to that release. Each IPA is unsigned and must be sideloaded with Sideloadly; this workflow does not install Xcode on your Mac or install the app directly onto the phone.
-
 ### Website
 
-The Landing page is at [https://tvoginc.github.io/Tvo/](https://tvoginc.github.io/Tvo/). Here you could also see a tutorial.
+The Landing page is at [https://tvoginc.github.io/Tvo/](https://tvoginc.github.io/Tvo/). Here can see a tutorial to install Tvo, and install the app.
 
 Shortcuts work anywhere:
 
