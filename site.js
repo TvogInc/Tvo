@@ -46,7 +46,7 @@ function configureReleaseDownload() {
     return;
   }
 
-  downloadLink.href = `https://github.com/${repository}/releases/latest/download/Tvo.ipa`;
+  downloadLink.href = `https://github.com/${repository}/releases/latest/`;
   downloadLink.classList.add("is-live");
   downloadLabel.textContent = "Download Tvo for iPhone";
   downloadHint.textContent = "Unsigned IPA · Sign and install with Sideloadly. GitHub Releases opens in a new tab.";
