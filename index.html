@@ -237,7 +237,11 @@
           <p class="install-footnote">
             This builds from the project source and signs locally through Xcode; no third-party sideloader or unsigned Mac installer is needed. We verified the current Sideloadly Mac app is unsigned, so macOS cannot verify its publisher or integrity. Don’t bypass a Gatekeeper warning to run it. <a href="https://support.apple.com/en-us/102445" target="_blank" rel="noopener noreferrer">About Gatekeeper and safely opening apps</a>.
           </p>
-          <p class="install-footnote">You can also try <a href="https://github.com/SideStore/SideServer-macOS/releases/tag/v1.0.6" target="_blank" rel="noopener noreferrer">SideServer v1.0.6</a> using <code>scripts/install-iphone-sideserver.sh</code>. This notarized 2023 release is an experimental alternative; macOS 27 compatibility and the anisette <code>machineID</code> behavior are unverified. The helper checks Gatekeeper and will not bypass it.</p>
+          <div class="install-steps">
+            <div class="install-step">
+              <span>i</span><div><h3>Use the optional SideServer helper</h3><p>Download and unzip the <a href="https://github.com/TvogInc/Tvo/archive/refs/heads/main.zip">Tvo source archive</a>, open Terminal in its folder, and run <code>./scripts/install-iphone-sideserver.sh</code>. It verifies the official SideServer app, downloads the latest Tvo IPA, and opens both. In SideServer, hold Option while opening the menu-bar menu to show the IPA-sideload command; select your iPhone and the downloaded IPA, then follow its signing prompts. Enter your Apple Account credentials only in software you trust. This 2023 release is experimental on macOS 27 and may still report the anisette <code>machineID</code> error.</p></div>
+            </div>
+          </div>
         </div>
       </section>
 
