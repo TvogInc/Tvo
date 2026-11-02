@@ -19,7 +19,11 @@ jobs:
       - name: Set release version
         id: version
         run: |
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            if [[ ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::Release tags must use the format vMAJOR.MINOR.PATCH (for example, v0.1.1)."
+              exit 1
+            fi
             version="${GITHUB_REF_NAME#v}"
           else
             version="0.1"
@@ -27,6 +31,8 @@ jobs:
           echo "value=$version" >> "$GITHUB_OUTPUT"
 
       - name: Build unsigned iPhone app
+        env:
+          TVO_MARKETING_VERSION: ${{ steps.version.outputs.value }}
         run: |
           set -euo pipefail
           xcodebuild \
@@ -36,7 +42,7 @@ jobs:
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
             -derivedDataPath "$RUNNER_TEMP/tvo-derived" \
-            MARKETING_VERSION="${{ steps.version.outputs.value }}" \
+            MARKETING_VERSION="$TVO_MARKETING_VERSION" \
             CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" \
             CODE_SIGNING_ALLOWED=NO \
             build
