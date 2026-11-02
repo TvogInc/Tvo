@@ -26,6 +26,18 @@ The iPhone project intentionally has no developer team hard-coded, so you can se
 
 Publish releases with version tags such as `v0.1.1`. The release workflow attaches `tvo.mac.zip`, an unsigned `Tvo.ipa` for compatible tools, and the signed Sparkle appcast. The first updater-enabled Mac release must be installed manually; older Mac builds do not contain Sparkle.
 
+#### Separate SideServer alternative
+
+The optional `scripts/install-iphone-sideserver.sh` helper downloads Tvo's latest IPA and the official [SideServer v1.0.6 release](https://github.com/SideStore/SideServer-macOS/releases/tag/v1.0.6). It verifies SideServer's code signature, expected developer identity, bundle identifier, and Gatekeeper acceptance before installing it at `~/Applications/SideServer-v1.0.6.app` or opening that existing verified copy. It does not copy SideServer source code into Tvo.
+
+Run it from the Tvo source folder:
+
+```
+./scripts/install-iphone-sideserver.sh
+```
+
+In SideServer, hold Option while opening its menu-bar menu to reveal the IPA-sideload command, then select your iPhone and the downloaded IPA. Credentials are entered in SideServer, never in Tvo. **This is an experimental alternative, not a confirmed macOS 27 fix:** v1.0.6 was released in 2023, and its anisette path may still fail with `machineID` on current macOS. The helper does not bypass Gatekeeper.
+
 ### Website
 
 The landing page is at [https://tvoginc.github.io/Tvo/](https://tvoginc.github.io/Tvo/) and includes the Xcode iPhone install tutorial and Mac app download.
